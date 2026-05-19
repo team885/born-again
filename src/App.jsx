@@ -18,21 +18,6 @@ const getLast7Days=()=>{const r=[];for(let i=6;i>=0;i--){const d=new Date();d.se
 const sumEntries=(arr)=>arr.reduce((a,e)=>{Object.keys(EMPTY_METRICS).forEach(k=>{a[k]=(a[k]||0)+(Number(e[k])||0);});return a;},{...EMPTY_METRICS});
 const calcRates=(d)=>({ownerRate:d.calls>0?+((d.ownersSpoken/d.calls)*100).toFixed(1):0,bookingRate:d.ownersSpoken>0?+((d.apptsBooked/d.ownersSpoken)*100).toFixed(1):0,showRate:d.apptsCompleted+d.apptsNoShow>0?+((d.apptsCompleted/(d.apptsCompleted+d.apptsNoShow))*100).toFixed(1):0,closeRate:d.dealsClosed+d.dealsLost>0?+((d.dealsClosed/(d.dealsClosed+d.dealsLost))*100).toFixed(1):0});
 
-const VERSES=[
-  {text:"I can do all things through Christ who strengthens me.",ref:"Philippians 4:13"},
-  {text:"For God has not given us a spirit of fear, but of power and of love and of a sound mind.",ref:"2 Timothy 1:7"},
-  {text:"Commit your work to the LORD, and your plans will be established.",ref:"Proverbs 16:3"},
-  {text:"The plans of the diligent lead surely to abundance.",ref:"Proverbs 21:5"},
-  {text:"Be strong and courageous. Do not be afraid; do not be discouraged.",ref:"Joshua 1:9"},
-  {text:"For I know the plans I have for you — plans to prosper you and not to harm you.",ref:"Jeremiah 29:11"},
-  {text:"With God all things are possible.",ref:"Matthew 19:26"},
-  {text:"Your next YES is one dial away. Pick up the phone.",ref:"— Born Again"},
-  {text:"Every call you make is an act of faith. Someone out there needs what you have.",ref:"— Born Again"},
-  {text:"Champions are built in the moments they don't feel like it. Dial anyway.",ref:"— Born Again"},
-  {text:"Rejection is redirection. Every no gets you closer to the yes God has for you.",ref:"— Born Again"},
-  {text:"God didn't bring you this far to leave you. Keep dialing.",ref:"— Born Again"},
-  {text:"Make one more call. Then one more after that. That is the whole secret.",ref:"— Born Again"},
-];
 
 // Firebase hook
 function useAllData(){
@@ -279,8 +264,6 @@ function LiveDialer({user,allData,allGoals,saveEntry}){
   const[owners,setOwners]=useState(0);
   const[saving,setSaving]=useState(false);
   const breakRef=useRef(null);
-  const verseIdx=useMemo(()=>Math.floor(Math.random()*VERSES.length),[]);
-  const verse=VERSES[verseIdx];
   const goals=allGoals[user.id]||DEFAULT_GOALS;
   const goal=parseInt(sessionGoal)||goals.calls;
   const pct=goal>0?Math.min((calls/goal)*100,100):0;
@@ -321,11 +304,6 @@ function LiveDialer({user,allData,allGoals,saveEntry}){
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted,letterSpacing:"0.2em",marginBottom:8}}>READY TO MAKE MONEY?</div>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:60,color:T.text,letterSpacing:"0.04em",lineHeight:1,textShadow:`0 0 40px ${user.color}44`}}>SET YOUR GOAL</div>
       </div>
-      <div style={{background:T.card,border:`1px solid ${user.color}33`,borderRadius:14,padding:"22px 36px",maxWidth:520,width:"100%",textAlign:"center",boxShadow:`0 0 30px ${user.color}11`}}>
-        <div style={{fontSize:28,marginBottom:12}}>✨</div>
-        <div style={{fontFamily:"'Manrope',sans-serif",fontSize:15,color:T.sub,lineHeight:1.7,fontStyle:"italic",marginBottom:10}}>"{verse.text}"</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:user.color,letterSpacing:"0.15em"}}>{verse.ref}</div>
-      </div>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.2em"}}>HOW MANY CALLS TODAY?</div>
         <input type="number" value={sessionGoal} placeholder={String(goals.calls)} onChange={e=>setSessionGoal(e.target.value)}
@@ -357,10 +335,6 @@ function LiveDialer({user,allData,allGoals,saveEntry}){
       <div style={{fontSize:64,animation:"float 3s ease-in-out infinite"}}>🧘</div>
       <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:52,color:T.text,letterSpacing:"0.04em",textShadow:`0 0 30px ${T.cyan}44`}}>TAKE A BREAK</div>
       <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:T.muted,letterSpacing:"0.15em"}}>{calls} CALLS DONE — REST YOUR MIND FOR 30 MINUTES</div>
-      <div style={{background:T.card,border:`1px solid ${T.purple}33`,borderRadius:14,padding:"22px 36px",maxWidth:460,boxShadow:`0 0 30px ${T.purple}11`}}>
-        <div style={{fontFamily:"'Manrope',sans-serif",fontSize:14,color:T.sub,lineHeight:1.7,fontStyle:"italic"}}>"{verse.text}"</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:user.color,letterSpacing:"0.15em",marginTop:10}}>{verse.ref}</div>
-      </div>
       <div style={{display:"flex",gap:12}}>
         <button onClick={()=>setPhase("live")} style={{background:`linear-gradient(135deg,${user.color},${T.purple})`,color:"white",border:"none",borderRadius:12,padding:"14px 36px",fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:"0.1em",cursor:"pointer",boxShadow:`0 6px 30px ${user.color}44`}}>BACK TO DIALING</button>
         <button onClick={endSession} style={{background:"transparent",color:T.muted,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px 24px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,cursor:"pointer"}}>END SESSION</button>
@@ -392,9 +366,6 @@ function LiveDialer({user,allData,allGoals,saveEntry}){
   const cp2Pct=goal>0?(cp2/goal)*100:66;
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:20,paddingTop:8,maxWidth:640,margin:"0 auto",width:"100%"}}>
-      <div style={{background:T.card,border:`1px solid ${user.color}22`,borderRadius:12,padding:"14px 24px",width:"100%",textAlign:"center",boxShadow:`0 0 20px ${user.color}11`}}>
-        <div style={{fontFamily:"'Manrope',sans-serif",fontSize:12,color:T.sub,lineHeight:1.5,fontStyle:"italic"}}>"{verse.text}" <span style={{color:user.color,fontStyle:"normal"}}>— {verse.ref}</span></div>
-      </div>
       <div style={{width:"100%"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
           <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.15em"}}>PROGRESS TO GOAL</div>
