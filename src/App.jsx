@@ -13,51 +13,26 @@ const USERS=[
 const EMPTY_METRICS={calls:0,ownersSpoken:0,apptsBooked:0,apptsCompleted:0,apptsNoShow:0,dealsClosed:0,dealsLost:0,leadsInPipeline:0};
 const DEFAULT_GOALS={calls:50,ownersSpoken:10,apptsBooked:3,dealsClosed:1};
 
+const getWeekStart=()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());d.setHours(0,0,0,0);return d;};
+const getLast7Days=()=>{const r=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);r.push(d.toISOString().split("T")[0]);}return r;};
+const sumEntries=(arr)=>arr.reduce((a,e)=>{Object.keys(EMPTY_METRICS).forEach(k=>{a[k]=(a[k]||0)+(Number(e[k])||0);});return a;},{...EMPTY_METRICS});
+const calcRates=(d)=>({ownerRate:d.calls>0?+((d.ownersSpoken/d.calls)*100).toFixed(1):0,bookingRate:d.ownersSpoken>0?+((d.apptsBooked/d.ownersSpoken)*100).toFixed(1):0,showRate:d.apptsCompleted+d.apptsNoShow>0?+((d.apptsCompleted/(d.apptsCompleted+d.apptsNoShow))*100).toFixed(1):0,closeRate:d.dealsClosed+d.dealsLost>0?+((d.dealsClosed/(d.dealsClosed+d.dealsLost))*100).toFixed(1):0});
+
 const VERSES=[
   {text:"I can do all things through Christ who strengthens me.",ref:"Philippians 4:13"},
   {text:"For God has not given us a spirit of fear, but of power and of love and of a sound mind.",ref:"2 Timothy 1:7"},
   {text:"Commit your work to the LORD, and your plans will be established.",ref:"Proverbs 16:3"},
   {text:"The plans of the diligent lead surely to abundance.",ref:"Proverbs 21:5"},
-  {text:"Whatever you do, work at it with all your heart, as working for the Lord.",ref:"Colossians 3:23"},
   {text:"Be strong and courageous. Do not be afraid; do not be discouraged.",ref:"Joshua 1:9"},
-  {text:"My God will supply every need of yours according to his riches in glory.",ref:"Philippians 4:19"},
-  {text:"Trust in the LORD with all your heart and lean not on your own understanding.",ref:"Proverbs 3:5"},
-  {text:"Ask and it will be given to you; seek and you will find.",ref:"Matthew 7:7"},
-  {text:"The LORD will open to you his good treasury to bless all the work of your hands.",ref:"Deuteronomy 28:12"},
-  {text:"Delight yourself in the LORD, and he will give you the desires of your heart.",ref:"Psalm 37:4"},
   {text:"For I know the plans I have for you — plans to prosper you and not to harm you.",ref:"Jeremiah 29:11"},
   {text:"With God all things are possible.",ref:"Matthew 19:26"},
-  {text:"No weapon formed against you shall prosper.",ref:"Isaiah 54:17"},
-  {text:"The LORD is my shepherd; I shall not want.",ref:"Psalm 23:1"},
-  {text:"Be anxious for nothing, but in everything by prayer present your requests to God.",ref:"Philippians 4:6"},
-  {text:"Do not be conformed to this world, but be transformed by the renewal of your mind.",ref:"Romans 12:2"},
-  {text:"The LORD is my light and my salvation — whom shall I fear?",ref:"Psalm 27:1"},
   {text:"Your next YES is one dial away. Pick up the phone.",ref:"— Born Again"},
   {text:"Every call you make is an act of faith. Someone out there needs what you have.",ref:"— Born Again"},
   {text:"Champions are built in the moments they don't feel like it. Dial anyway.",ref:"— Born Again"},
   {text:"Rejection is redirection. Every no gets you closer to the yes God has for you.",ref:"— Born Again"},
-  {text:"Wealth is built in the uncomfortable conversations you still choose to make.",ref:"— Born Again"},
-  {text:"You were not built for comfort. You were built for conquest.",ref:"— Born Again"},
-  {text:"The grind you put in today is the testimony you'll share tomorrow.",ref:"— Born Again"},
   {text:"God didn't bring you this far to leave you. Keep dialing.",ref:"— Born Again"},
-  {text:"Success is not final, failure is not fatal: it is the courage to continue that counts.",ref:"— Churchill"},
-  {text:"The difference between a successful person and others is not strength or knowledge — but will.",ref:"— Lombardi"},
-  {text:"You don't build a business. You build people, and people build the business.",ref:"— Zig Ziglar"},
   {text:"Make one more call. Then one more after that. That is the whole secret.",ref:"— Born Again"},
 ];
-
-const SUDOKU=[
-  {puzzle:[[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]],solution:[[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]]},
-  {puzzle:[[0,0,0,2,6,0,7,0,1],[6,8,0,0,7,0,0,9,0],[1,9,0,0,0,4,5,0,0],[8,2,0,1,0,0,0,4,0],[0,0,4,6,0,2,9,0,0],[0,5,0,0,0,3,0,2,8],[0,0,9,3,0,0,0,7,4],[0,4,0,0,5,0,0,3,6],[7,0,3,0,1,8,0,0,0]],solution:[[4,3,5,2,6,9,7,8,1],[6,8,2,5,7,1,4,9,3],[1,9,7,8,3,4,5,6,2],[8,2,6,1,9,5,3,4,7],[3,7,4,6,8,2,9,1,5],[9,5,1,7,4,3,6,2,8],[5,1,9,3,2,6,8,7,4],[2,4,8,9,5,7,1,3,6],[7,6,3,4,1,8,2,5,9]]},
-];
-
-const MEMORY_EMOJIS=["💰","📞","🎯","🔥","⚡","💪","🚀","🏆"];
-
-const todayKey=()=>new Date().toISOString().split("T")[0];
-const getWeekStart=()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());d.setHours(0,0,0,0);return d;};
-const getLast7Days=()=>{const r=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);r.push(d.toISOString().split("T")[0]);}return r;};
-const sumEntries=(arr)=>arr.reduce((a,e)=>{Object.keys(EMPTY_METRICS).forEach(k=>{a[k]=(a[k]||0)+(Number(e[k])||0);});return a;},{...EMPTY_METRICS});
-const calcRates=(d)=>({ownerRate:d.calls>0?+((d.ownersSpoken/d.calls)*100).toFixed(1):0,bookingRate:d.ownersSpoken>0?+((d.apptsBooked/d.ownersSpoken)*100).toFixed(1):0,showRate:d.apptsCompleted+d.apptsNoShow>0?+((d.apptsCompleted/(d.apptsCompleted+d.apptsNoShow))*100).toFixed(1):0,closeRate:d.dealsClosed+d.dealsLost>0?+((d.dealsClosed/(d.dealsClosed+d.dealsLost))*100).toFixed(1):0});
 
 // Firebase hook
 function useAllData(){
@@ -470,231 +445,6 @@ function LiveDialer({user,allData,allGoals,saveEntry}){
   );
 }
 
-// Mind Games
-function MindGames(){
-  const[game,setGame]=useState(null);
-  if(game==="sudoku")return<SudokuGame onBack={()=>setGame(null)}/>;
-  if(game==="memory")return<MemoryGame onBack={()=>setGame(null)}/>;
-  if(game==="math")return<MathFlash onBack={()=>setGame(null)}/>;
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:24,animation:"slideUp 0.4s ease"}}>
-      <div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.2em",marginBottom:8}}>── MIND GAMES</div>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:38,color:T.text,letterSpacing:"0.04em",lineHeight:1}}>Strengthen Your Mind</div>
-        <div style={{fontFamily:"'Manrope',sans-serif",fontSize:13,color:T.muted,marginTop:8,lineHeight:1.5}}>A sharp mind closes more deals. Rest your brain between sessions with these focus-builders.</div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20}}>
-        {[{id:"sudoku",icon:"🧩",name:"Sudoku",desc:"Classic number puzzle. Fill the 9×9 grid without repeating digits in any row, column, or 3×3 box.",diff:"MEDIUM",color:T.primary},{id:"memory",icon:"🃏",name:"Memory Match",desc:"Flip cards to find matching pairs. Trains short-term memory and pattern recognition — key for sales.",diff:"EASY",color:T.cyan},{id:"math",icon:"⚡",name:"Math Flash",desc:"Rapid-fire arithmetic. Keeps your mental math sharp for quick projections and owner-rate calculations.",diff:"HARD",color:T.purple}].map(g=>(
-          <button key={g.id} onClick={()=>setGame(g.id)}
-            style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:"28px 24px",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:14,cursor:"pointer",transition:"all 0.25s",textAlign:"left"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=g.color+"55";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 12px 40px ${g.color}18`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
-            <div style={{fontSize:40,animation:"float 3s ease-in-out infinite"}}>{g.icon}</div>
-            <div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.text,letterSpacing:"0.06em",lineHeight:1}}>{g.name}</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:g.color,letterSpacing:"0.15em",marginTop:3}}>{g.diff}</div>
-            </div>
-            <div style={{fontFamily:"'Manrope',sans-serif",fontSize:12,color:T.muted,lineHeight:1.5}}>{g.desc}</div>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:g.color,letterSpacing:"0.12em",marginTop:4,display:"flex",alignItems:"center",gap:6}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:g.color,boxShadow:`0 0 6px ${g.color}`}}/>
-              PLAY NOW →
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SudokuGame({onBack}){
-  const[pidx,setPidx]=useState(0);
-  const puz=SUDOKU[pidx];
-  const[grid,setGrid]=useState(()=>puz.puzzle.map(r=>[...r]));
-  const[sel,setSel]=useState(null);
-  const[errors,setErrors]=useState(new Set());
-  const[won,setWon]=useState(false);
-  const[secs,setSecs]=useState(0);
-  const timerRef=useRef(null);
-  useEffect(()=>{timerRef.current=setInterval(()=>setSecs(s=>s+1),1000);return()=>clearInterval(timerRef.current);},[]);
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-  const put=(r,c,v)=>{if(puz.puzzle[r][c]!==0)return;const ng=grid.map(row=>[...row]);ng[r][c]=v;setGrid(ng);const ne=new Set(errors);ne.delete(`${r},${c}`);setErrors(ne);};
-  const check=()=>{
-    const ne=new Set();
-    grid.forEach((row,r)=>row.forEach((v,c)=>{if(v!==0&&puz.puzzle[r][c]===0&&v!==puz.solution[r][c])ne.add(`${r},${c}`);}));
-    setErrors(ne);
-    if(ne.size===0){const ok=grid.every((row,r)=>row.every((v,c)=>v===puz.solution[r][c]));if(ok){setWon(true);clearInterval(timerRef.current);}}
-  };
-  const newGame=()=>{const ni=(pidx+1)%SUDOKU.length;setPidx(ni);setGrid(SUDOKU[ni].puzzle.map(r=>[...r]));setSel(null);setErrors(new Set());setWon(false);setSecs(0);};
-  const cellBg=(r,c)=>{
-    if(errors.has(`${r},${c}`))return T.red+"22";
-    if(sel&&sel[0]===r&&sel[1]===c)return T.primary+"44";
-    if(sel&&(sel[0]===r||sel[1]===c||(Math.floor(r/3)===Math.floor(sel[0]/3)&&Math.floor(c/3)===Math.floor(sel[1]/3))))return T.primary+"0D";
-    return(Math.floor(r/3)*3+Math.floor(c/3))%2===0?T.card:T.card2;
-  };
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:16,maxWidth:480,animation:"slideUp 0.3s ease"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <button onClick={onBack} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,cursor:"pointer"}}>← BACK</button>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.text,flex:1,letterSpacing:"0.06em"}}>SUDOKU</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,color:T.cyan,letterSpacing:"0.1em"}}>{fmt(secs)}</div>
-      </div>
-      {won&&<div style={{background:T.green+"15",border:`1px solid ${T.green}44`,borderRadius:12,padding:"16px 24px",textAlign:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.green,letterSpacing:"0.06em",boxShadow:`0 0 20px ${T.green}22`}}>🎉 SOLVED IN {fmt(secs)}!</div>}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:2,background:T.border,borderRadius:10,padding:2}}>
-        {grid.map((row,r)=>row.map((v,c)=>{
-          const given=puz.puzzle[r][c]!==0;
-          return(<div key={`${r},${c}`} onClick={()=>!given&&setSel([r,c])}
-            style={{background:cellBg(r,c),borderRadius:3,aspectRatio:"1",display:"flex",alignItems:"center",justifyContent:"center",cursor:given?"default":"pointer",fontFamily:"'Bebas Neue',sans-serif",fontSize:20,color:given?T.cyan:errors.has(`${r},${c}`)?T.red:T.text,borderRight:c===2||c===5?`2px solid ${T.primary}44`:"none",borderBottom:r===2||r===5?`2px solid ${T.primary}44`:"none",transition:"background 0.15s",boxShadow:sel&&sel[0]===r&&sel[1]===c?`inset 0 0 0 1px ${T.primary}`:null}}>
-            {v||""}
-          </div>);
-        }))}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:4}}>
-        {[1,2,3,4,5,6,7,8,9].map(n=>(
-          <button key={n} onClick={()=>sel&&put(sel[0],sel[1],n)}
-            style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 0",fontFamily:"'Bebas Neue',sans-serif",fontSize:22,color:T.primary,cursor:"pointer",transition:"all 0.15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.background=T.primary+"22";e.currentTarget.style.borderColor=T.primary+"44";}}
-            onMouseLeave={e=>{e.currentTarget.style.background=T.card;e.currentTarget.style.borderColor=T.border;}}>{n}</button>
-        ))}
-      </div>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={check} style={{flex:1,background:`linear-gradient(135deg,${T.primary},${T.purple})`,color:"white",border:"none",borderRadius:10,padding:"12px 0",fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:"0.1em",cursor:"pointer"}}>CHECK ANSWERS</button>
-        <button onClick={()=>sel&&put(sel[0],sel[1],0)} style={{background:T.card,color:T.muted,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 18px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,cursor:"pointer"}}>CLEAR</button>
-        <button onClick={newGame} style={{background:T.card,color:T.muted,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 18px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,cursor:"pointer"}}>NEW</button>
-      </div>
-    </div>
-  );
-}
-
-function MemoryGame({onBack}){
-  const shuffle=arr=>[...arr].sort(()=>Math.random()-0.5);
-  const makeCards=()=>shuffle([...MEMORY_EMOJIS,...MEMORY_EMOJIS]).map((e,i)=>({id:i,emoji:e,flipped:false,matched:false}));
-  const[cards,setCards]=useState(makeCards);
-  const[flipped,setFlipped]=useState([]);
-  const[moves,setMoves]=useState(0);
-  const[won,setWon]=useState(false);
-  const flip=(id)=>{
-    if(flipped.length===2)return;
-    const card=cards.find(c=>c.id===id);
-    if(!card||card.flipped||card.matched)return;
-    const nf=[...flipped,id];
-    setCards(cs=>cs.map(c=>c.id===id?{...c,flipped:true}:c));
-    setFlipped(nf);
-    if(nf.length===2){
-      setMoves(m=>m+1);
-      const[a,b]=nf.map(id=>cards.find(c=>c.id===id));
-      if(a.emoji===b.emoji){
-        setTimeout(()=>{
-          setCards(cs=>{const nc=cs.map(c=>nf.includes(c.id)?{...c,matched:true}:c);if(nc.every(c=>c.matched))setWon(true);return nc;});
-          setFlipped([]);
-        },400);
-      }else{setTimeout(()=>{setCards(cs=>cs.map(c=>nf.includes(c.id)?{...c,flipped:false}:c));setFlipped([]);},800);}
-    }
-  };
-  const restart=()=>{setCards(makeCards());setFlipped([]);setMoves(0);setWon(false);};
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:16,maxWidth:440,animation:"slideUp 0.3s ease"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <button onClick={onBack} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,cursor:"pointer"}}>← BACK</button>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.text,flex:1,letterSpacing:"0.06em"}}>MEMORY MATCH</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.cyan}}>{moves} MOVES</div>
-      </div>
-      {won&&<div style={{background:T.green+"15",border:`1px solid ${T.green}44`,borderRadius:12,padding:"16px 24px",textAlign:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.green,letterSpacing:"0.06em",boxShadow:`0 0 20px ${T.green}22`}}>🎉 SOLVED IN {moves} MOVES!</div>}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-        {cards.map(card=>(
-          <div key={card.id} onClick={()=>flip(card.id)}
-            style={{aspectRatio:"1",background:card.matched?T.green+"18":card.flipped?`linear-gradient(135deg,${T.primary}22,${T.purple}22)`:T.card,border:`1px solid ${card.matched?T.green+"44":card.flipped?T.primary+"44":T.border}`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,cursor:card.matched||card.flipped?"default":"pointer",transition:"all 0.25s",boxShadow:card.matched?`0 0 14px ${T.green}33`:card.flipped?`0 0 10px ${T.primary}22`:"none",transform:card.flipped||card.matched?"scale(1)":"scale(0.96)"}}>
-            {(card.flipped||card.matched)?card.emoji:""}
-          </div>
-        ))}
-      </div>
-      <button onClick={restart} style={{background:`linear-gradient(135deg,${T.primary},${T.purple})`,color:"white",border:"none",borderRadius:10,padding:"12px 0",fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:"0.1em",cursor:"pointer"}}>NEW GAME</button>
-    </div>
-  );
-}
-
-function MathFlash({onBack}){
-  const gen=()=>{const ops=["+","-","x"];const op=ops[Math.floor(Math.random()*ops.length)];let a,b,ans;if(op==="+"){a=Math.floor(Math.random()*50)+1;b=Math.floor(Math.random()*50)+1;ans=a+b;}else if(op==="-"){a=Math.floor(Math.random()*50)+20;b=Math.floor(Math.random()*a)+1;ans=a-b;}else{a=Math.floor(Math.random()*12)+1;b=Math.floor(Math.random()*12)+1;ans=a*b;}return{q:`${a} ${op} ${b}`,ans};};
-  const[q,setQ]=useState(gen);const[input,setInput]=useState("");const[score,setScore]=useState(0);const[total,setTotal]=useState(0);const[fb,setFb]=useState(null);
-  const submit=()=>{const ok=parseInt(input)===q.ans;setFb(ok?"ok":"no");setScore(s=>ok?s+1:s);setTotal(t=>t+1);setTimeout(()=>{setQ(gen());setInput("");setFb(null);},600);};
-  const fc=fb==="ok"?T.green:fb==="no"?T.red:null;
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:20,maxWidth:380,alignItems:"center",animation:"slideUp 0.3s ease"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,width:"100%"}}>
-        <button onClick={onBack} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,cursor:"pointer"}}>← BACK</button>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.text,flex:1,letterSpacing:"0.06em"}}>MATH FLASH</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.cyan}}>{score}/{total}</div>
-      </div>
-      <div key={q.q} style={{background:fc?fc+"15":T.card,border:`1px solid ${fc?fc+"55":T.border}`,borderRadius:16,padding:"32px 48px",textAlign:"center",transition:"all 0.2s",boxShadow:fc?`0 0 30px ${fc}33`:"none",width:"100%",animation:"zoom 0.3s ease"}}>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:68,color:fc||T.text,lineHeight:1,textShadow:fc?`0 0 20px ${fc}66`:"none"}}>{q.q} =</div>
-      </div>
-      <input autoFocus type="number" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&input&&submit()}
-        style={{background:T.card,border:`2px solid ${T.primary}44`,borderRadius:12,padding:"16px 0",fontFamily:"'Bebas Neue',sans-serif",fontSize:48,color:T.primary,outline:"none",width:180,textAlign:"center",textShadow:`0 0 12px ${T.primary}44`}}/>
-      <button onClick={()=>input&&submit()} style={{background:`linear-gradient(135deg,${T.primary},${T.purple})`,color:"white",border:"none",borderRadius:10,padding:"12px 40px",fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:"0.1em",cursor:"pointer"}}>CHECK</button>
-      {total>0&&<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted,letterSpacing:"0.15em"}}>ACCURACY: {((score/total)*100).toFixed(0)}% · {total} ANSWERED</div>}
-    </div>
-  );
-}
-
-// Daily Verse
-function DailyVerse(){
-  const doy=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/(1000*60*60*24));
-  const[idx,setIdx]=useState(doy%VERSES.length);
-  const[favs,setFavs]=useState([]);
-  useEffect(()=>{try{setFavs(JSON.parse(localStorage.getItem("baFav")||"[]"));}catch{}},[]);
-  const isFav=favs.includes(idx);
-  const toggleFav=()=>{const n=isFav?favs.filter(i=>i!==idx):[...favs,idx];setFavs(n);try{localStorage.setItem("baFav",JSON.stringify(n));}catch{}};
-  const verse=VERSES[idx];
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:28,animation:"slideUp 0.4s ease"}}>
-      <div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.2em",marginBottom:8}}>── DAILY VERSE</div>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:38,color:T.text,letterSpacing:"0.04em"}}>Word for Today</div>
-      </div>
-      <div style={{background:`linear-gradient(135deg,${T.card},${T.card2})`,border:`1px solid ${T.purple}44`,borderRadius:20,padding:"48px 56px",textAlign:"center",position:"relative",boxShadow:`0 0 60px ${T.purple}18,0 0 120px ${T.purple}08`}}>
-        <div style={{position:"absolute",top:16,left:24,fontFamily:"'Bebas Neue',sans-serif",fontSize:120,color:T.purple+"15",lineHeight:1,userSelect:"none",pointerEvents:"none"}}>"</div>
-        <div style={{position:"absolute",bottom:16,right:24,fontFamily:"'Bebas Neue',sans-serif",fontSize:120,color:T.purple+"15",lineHeight:1,userSelect:"none",pointerEvents:"none",transform:"rotate(180deg)"}}>"</div>
-        <div style={{fontSize:32,marginBottom:16,animation:"float 4s ease-in-out infinite"}}>✨</div>
-        <div style={{fontFamily:"'Manrope',sans-serif",fontWeight:600,fontSize:20,color:T.text,lineHeight:1.75,marginBottom:24,position:"relative"}}>{verse.text}</div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.purple,letterSpacing:"0.2em"}}>{verse.ref}</div>
-        <button onClick={toggleFav} title={isFav?"Remove from favorites":"Add to favorites"} style={{position:"absolute",top:20,right:20,background:"transparent",border:`1px solid ${isFav?T.amber+"55":T.border}`,borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,cursor:"pointer",transition:"all 0.2s",boxShadow:isFav?`0 0 12px ${T.amber}44`:null}}>{isFav?"⭐":"☆"}</button>
-      </div>
-      <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-        <button onClick={()=>setIdx(i=>(i-1+VERSES.length)%VERSES.length)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 20px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted,cursor:"pointer",letterSpacing:"0.1em"}}>← PREV</button>
-        <button onClick={()=>setIdx(Math.floor(Math.random()*VERSES.length))} style={{background:`linear-gradient(135deg,${T.primary},${T.purple})`,border:"none",borderRadius:10,padding:"10px 28px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"white",cursor:"pointer",letterSpacing:"0.1em",boxShadow:`0 4px 20px ${T.primary}44`}}>✨ RANDOM</button>
-        <button onClick={()=>setIdx(doy%VERSES.length)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 20px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted,cursor:"pointer",letterSpacing:"0.1em"}}>TODAY</button>
-        <button onClick={()=>setIdx(i=>(i+1)%VERSES.length)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 20px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted,cursor:"pointer",letterSpacing:"0.1em"}}>NEXT →</button>
-      </div>
-      {favs.length>0&&<div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.2em",marginBottom:14}}>── YOUR FAVORITES ({favs.length})</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {favs.map(i=>{const v=VERSES[i];return(<div key={i} onClick={()=>setIdx(i)} style={{background:T.card,border:`1px solid ${T.amber}33`,borderRadius:12,padding:"16px 20px",cursor:"pointer",transition:"all 0.2s",display:"flex",gap:12,alignItems:"flex-start"}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=T.amber+"55"} onMouseLeave={e=>e.currentTarget.style.borderColor=T.amber+"33"}>
-            <div style={{fontSize:16,flexShrink:0}}>⭐</div>
-            <div>
-              <div style={{fontFamily:"'Manrope',sans-serif",fontSize:13,color:T.text,lineHeight:1.5,marginBottom:4}}>"{v.text}"</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:T.amber,letterSpacing:"0.12em"}}>{v.ref}</div>
-            </div>
-          </div>);})}
-        </div>
-      </div>}
-      <div>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.2em",marginBottom:14}}>── ALL VERSES ({VERSES.length})</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {VERSES.map((v,i)=>(
-            <div key={i} onClick={()=>setIdx(i)}
-              style={{background:i===idx?T.primary+"15":T.card,border:`1px solid ${i===idx?T.primary+"55":T.border}`,borderRadius:10,padding:"14px 16px",cursor:"pointer",transition:"all 0.2s",boxShadow:i===idx?`0 0 14px ${T.primary}22`:null}}
-              onMouseEnter={e=>{if(i!==idx)e.currentTarget.style.borderColor=T.primary+"33";}}
-              onMouseLeave={e=>{if(i!==idx)e.currentTarget.style.borderColor=T.border;}}>
-              <div style={{fontFamily:"'Manrope',sans-serif",fontSize:12,color:i===idx?T.text:T.sub,lineHeight:1.5,marginBottom:4}}>"{v.text.length>70?v.text.slice(0,70)+"...":v.text}"</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:i===idx?T.primary:T.muted,letterSpacing:"0.12em"}}>{v.ref}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Notes
 function Notes({user,allNotes,saveNote}){
   const[selDate,setSelDate]=useState(todayKey());
@@ -988,7 +738,7 @@ export default function App(){
   const handleSaveEntry=async(form)=>{await saveEntry(user.id,modalDate,form);setShowModal(false);};
   const SL=({txt})=><div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:T.muted,letterSpacing:"0.22em",marginBottom:12}}>── {txt}</div>;
 
-  const TABS=[{id:"dashboard",icon:"📊",label:"Dashboard"},{id:"dialer",icon:"📞",label:"Live Dialer"},{id:"games",icon:"🧩",label:"Mind Games"},{id:"verse",icon:"✨",label:"Daily Verse"},{id:"notes",icon:"📝",label:"Notes"},{id:"charts",icon:"📈",label:"Charts"},{id:"goals",icon:"🎯",label:"Goals"},{id:"history",icon:"📋",label:"History"},{id:"team",icon:"👥",label:"Team"},{id:"export",icon:"⬇",label:"Export"}];
+  const TABS=[{id:"dashboard",icon:"📊",label:"Dashboard"},{id:"dialer",icon:"📞",label:"Live Dialer"},{id:"notes",icon:"📝",label:"Notes"},{id:"charts",icon:"📈",label:"Charts"},{id:"goals",icon:"🎯",label:"Goals"},{id:"history",icon:"📋",label:"History"},{id:"team",icon:"👥",label:"Team"},{id:"export",icon:"⬇",label:"Export"}];
 
   if(!ready)return<div style={{height:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",color:T.primary,fontSize:11,letterSpacing:"0.2em",textShadow:`0 0 20px ${T.primary}66`}}>LOADING...</div>;
   if(!user)return<LoginScreen onLogin={setUser} allData={allData}/>;
@@ -1095,8 +845,6 @@ export default function App(){
           </div>)}
 
           {tab==="dialer"&&<LiveDialer user={user} allData={allData} allGoals={allGoals} saveEntry={saveEntry}/>}
-          {tab==="games"&&<MindGames/>}
-          {tab==="verse"&&<DailyVerse/>}
           {tab==="notes"&&<Notes user={user} allNotes={allNotes} saveNote={saveNote}/>}
 
           {tab==="charts"&&(<div style={{display:"flex",flexDirection:"column",gap:28,animation:"slideUp 0.4s ease"}}>
